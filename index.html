@@ -1,0 +1,228 @@
+import React, { useState } from 'react';
+import { Music, Search, Calendar, MapPin, Info, Copy, Check, Share2 } from 'lucide-react';
+
+// URLから取得したデータ（初期データとして定義）
+const INITIAL_EVENT_DATA = {
+    id: 1,
+    title: "RADWIMPS 20th ANNIVERSARY LIVE TOUR",
+    date: "2025-11-22",
+    venue: "横浜アリーナ",
+    prefecture: "神奈川県",
+    acts: [
+        {
+            artistName: "BUMP OF CHICKEN",
+            type: "Guest",
+            songs: [
+                { order: 1, title: "アカシア" },
+                { order: 2, title: "Hello,world!" },
+                { order: 3, title: "SOUVENIR" },
+                { order: 4, title: "クロノスタシス" },
+                { order: 5, title: "embrace", note: "アウトロで「愛にできることはまだあるかい」" },
+                { order: 6, title: "I" },
+                { order: 7, title: "天体観測" },
+                { order: 8, title: "ray" }
+            ]
+        },
+        {
+            artistName: "RADWIMPS",
+            type: "Main",
+            songs: [
+                { order: 1, title: "ふたりごと" },
+                { order: 2, title: "まーふぁか" },
+                { order: 3, title: "NEVER EVER ENDER" },
+                { order: 4, title: "ます。" },
+                { order: 5, title: "ワールドエンドガールフレンド" },
+                { order: 6, title: "me me she" },
+                { order: 7, title: "賜物" },
+                { order: 8, title: "アルエ", note: "BUMP OF CHICKEN COVER" },
+                { order: 9, title: "棒人間" },
+                { order: 10, title: "告白" },
+                { order: 11, title: "DADA" },
+                { order: 12, title: "DARMA GRAND PRIX" },
+                { order: 13, title: "三葉のテーマ" },
+                { order: 14, title: "スパークル" },
+                { order: 15, title: "グランドエスケープ" },
+                { order: 16, title: "トアルハルノヒ" },
+                { order: 17, title: "筆舌" },
+                { order: 18, title: "25コ目の染色体" },
+                { order: "En1", title: "同じドアをくぐれたら", note: "with BUMP OF CHICKEN" },
+                { order: "En2", title: "会心の一撃" }
+            ]
+        }
+    ]
+};
+
+export default function App() {
+    const [eventData, setEventData] = useState(INITIAL_EVENT_DATA);
+    const [copied, setCopied] = useState(false);
+
+    // 日付フォーマット関数
+    const formatDate = (dateString) => {
+        const date = new Date(dateString);
+        const days = ['日', '月', '火', '水', '木', '金', '土'];
+        return `${date.getFullYear()}.${(date.getMonth() + 1)}.${date.getDate()} (${days[date.getDay()]})`;
+    };
+
+    // クリップボードコピー機能
+    const copyToClipboard = () => {
+        let text = `${eventData.title}\n${eventData.date} @ ${eventData.venue}\n\n`;
+        
+        eventData.acts.forEach(act => {
+            text += `【${act.artistName}】\n`;
+            act.songs.forEach(song => {
+                const note = song.note ? ` (${song.note})` : '';
+                text += `${song.order}. ${song.title}${note}\n`;
+            });
+            text += '\n';
+        });
+
+        // クリップボードAPIが使えない環境（iframe内など）のためのフォールバック
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Copy failed', err);
+        }
+        document.body.removeChild(textArea);
+    };
+
+    return (
+        <div className="min-h-screen pb-12 bg-gray-900 text-gray-100 font-sans selection:bg-pink-500 selection:text-white">
+            <style jsx global>{`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+                body {
+                    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+                }
+                .glass-panel {
+                    background: rgba(31, 41, 55, 0.7);
+                    backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                }
+                .animate-fade-in {
+                    animation: fadeIn 0.5s ease-out forwards;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+            `}</style>
+
+            {/* Header */}
+            <header className="bg-gradient-to-r from-blue-900 via-purple-900 to-gray-900 shadow-lg sticky top-0 z-50 border-b border-white/10">
+                <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                        <Music className="text-pink-500 w-6 h-6" />
+                        <h1 className="text-xl font-bold text-white tracking-wider">Live Setlist DB</h1>
+                    </div>
+                    <button className="text-sm bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded transition flex items-center">
+                        <Search className="w-4 h-4 mr-1.5" />
+                        検索
+                    </button>
+                </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="max-w-3xl mx-auto px-4 mt-6">
+                
+                {/* Event Info Card */}
+                <div className="glass-panel rounded-xl p-6 mb-8 shadow-xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500 opacity-10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+                    
+                    <div className="relative z-10">
+                        <div className="flex items-center text-sm text-gray-400 mb-2">
+                            <span className="bg-pink-600 text-white text-xs px-2 py-0.5 rounded mr-2 font-bold">LIVE REPORT</span>
+                            <Calendar className="w-4 h-4 mr-1" />
+                            <span>{formatDate(eventData.date)}</span>
+                        </div>
+                        
+                        <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">
+                            {eventData.title}
+                        </h2>
+                        
+                        <div className="flex items-center text-gray-300 mt-3">
+                            <MapPin className="text-red-400 w-4 h-4 mr-2" />
+                            <span className="font-medium">{eventData.venue}</span>
+                            <span className="text-gray-500 text-sm ml-2">({eventData.prefecture})</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Setlists */}
+                <div className="space-y-8">
+                    {eventData.acts.map((act, actIndex) => (
+                        <div key={actIndex} className="animate-fade-in" style={{ animationDelay: `${actIndex * 0.1}s` }}>
+                            <div className="flex items-center justify-between mb-4 border-b border-gray-700 pb-2">
+                                <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                                    {act.artistName}
+                                </h3>
+                                <span className="text-xs text-gray-500 uppercase tracking-widest border border-gray-600 px-2 py-1 rounded">
+                                    {act.type} ACT
+                                </span>
+                            </div>
+
+                            <div className="glass-panel rounded-lg overflow-hidden">
+                                <ul className="divide-y divide-gray-700/50">
+                                    {act.songs.map((song, songIndex) => (
+                                        <li key={songIndex} className="p-4 hover:bg-white/5 transition flex items-start group">
+                                            <span className={`
+                                                w-8 text-right font-mono text-sm mr-4 pt-1
+                                                ${String(song.order).startsWith('En') ? 'text-pink-400 font-bold' : 'text-gray-500'}
+                                            `}>
+                                                {song.order}.
+                                            </span>
+                                            <div className="flex-1">
+                                                <div className="text-gray-100 font-medium text-lg leading-snug group-hover:text-cyan-300 transition-colors">
+                                                    {song.title}
+                                                </div>
+                                                {song.note && (
+                                                    <div className="text-sm text-gray-400 mt-1 flex items-center">
+                                                        <Info className="w-3 h-3 mr-1 opacity-70" />
+                                                        {song.note}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-12 flex justify-center space-x-4">
+                    <button 
+                        onClick={copyToClipboard}
+                        className={`
+                            flex items-center px-6 py-3 rounded-full font-bold shadow-lg transition transform hover:-translate-y-1 active:translate-y-0
+                            ${copied ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'}
+                        `}
+                    >
+                        {copied ? <Check className="w-5 h-5 mr-2" /> : <Copy className="w-5 h-5 mr-2" />}
+                        {copied ? 'コピーしました！' : 'セットリストをコピー'}
+                    </button>
+                    
+                    <button className="flex items-center px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg transition transform hover:-translate-y-1 active:translate-y-0">
+                        {/* Twitter SVG icon for better brand representation */}
+                        <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                        </svg>
+                        シェアする
+                    </button>
+                </div>
+
+            </main>
+
+            {/* Footer */}
+            <footer className="mt-16 border-t border-gray-800 py-8 text-center text-gray-500 text-sm">
+                <p>© 2025 Live Setlist DB Project.</p>
+                <p className="mt-2 text-xs opacity-60">※このサイトはファンによる非公式データベースです。</p>
+            </footer>
+        </div>
+    );
+}
